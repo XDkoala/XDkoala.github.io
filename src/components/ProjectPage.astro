@@ -1,0 +1,229 @@
+---
+import Base from '../layouts/Base.astro';
+import Viewer from './Viewer.astro';
+import VideoStage from './VideoStage.astro';
+import Collab from './Collab.astro';
+import { getContent } from '../data/content';
+import { ui, verdictClass, type Lang } from '../i18n/ui';
+interface Props { lang: Lang; slug: string }
+const { lang, slug } = Astro.props;
+const tx = ui[lang];
+const { projects } = getContent(lang);
+const idx = projects.findIndex((x) => x.slug === slug);
+const p = projects[idx];
+const prev = projects[(idx + projects.length - 1) % projects.length];
+const next = projects[(idx + 1) % projects.length];
+const base = import.meta.env.BASE_URL.replace(/\/$/, '') + '/';
+const prefix = lang === 'en' ? base + 'en/' : base;
+const ghIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.46-1.15-1.11-1.46-1.11-1.46-.9-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.9.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02a9.5 9.5 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.94.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"/></svg>';
+const check = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16 9.5"/></svg>';
+const collabIds = ['c-abil', 'c-roles', 'c-methods', 'c-cases'];
+const collabSubs = collabIds.map((id, i) => ({ id, t: tx.detail.collabSubs[i] }));
+const toc = [{ id: 'overview', t: tx.detail.overview, subs: [] as { id: string; t: string }[] }, ...p.sections.map((s, i) => ({ id: `s${i}`, t: s.type === 'collab' ? tx.detail.collabToc : s.title, subs: s.type === 'collab' ? collabSubs : [] }))];
+const pct = (v: number) => `${Math.max(0, Math.min(100, ((v - 80) / 10) * 100))}%`;
+---
+<Base lang={lang} title={tx.detail.pageTitle(p.title)} description={p.short}>
+  <main>
+    <section class="d-hero">
+      <div class="wrap">
+        <a class="back" href={`${prefix}#projects`}>{tx.detail.back}</a>
+        <div class="d-grid">
+          <div>
+            <div class="eyebrow" data-reveal>Project {p.no}{p.alias ? ` · ${p.alias}` : ''}</div>
+            <h1 data-reveal>{p.title}</h1>
+            <p class="lead" data-reveal>{p.short}</p>
+            <div class="tags" style="margin-top:22px" data-reveal>{p.tags.map((t) => <span>{t}</span>)}</div>
+            <div class="d-meta" data-reveal>
+              <div><small>{tx.proj.nature}</small><b>{p.nature}</b></div>
+              <div><small>{tx.proj.start}</small><b>{p.start}</b></div>
+              <div><small>{tx.proj.status}</small><b>{p.status}</b></div>
+            </div>
+            <div class="cta" data-reveal>
+              <a class="btn primary" data-magnet href={p.repo} target="_blank" rel="noopener"><Fragment set:html={ghIcon} />{tx.detail.repo}{p.repoLabel}</a>
+            </div>
+          </div>
+          <div class="d-media" data-reveal>
+            <div class="d-media-in">
+              {p.cover.kind === 'video'
+                ? <video src={`${base}${p.cover.src}#t=0.1`} muted loop playsinline preload="metadata" data-autoplay></video>
+                : <img src={`${base}${p.cover.src}`} alt={p.title} />}
+            </div>
+            {p.cover.kind === 'video' && <span class="d-badge mono">{tx.detail.badge}</span>}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="wrap d-body">
+      <aside class="toc">
+        {toc.map((s) => (
+          <>
+            <a data-spy href={`#${s.id}`}>{s.t}</a>
+            {s.subs.map((u) => <a class="sub" data-spy data-sub={s.id} href={`#${u.id}`}>{u.t}</a>)}
+          </>
+        ))}
+      </aside>
+      <div>
+        <section class="d-sec" id="overview" data-reveal>
+          <h2>{tx.detail.overview}</h2>
+          <p>{p.summary}</p>
+          <div class="box">
+            <b>{tx.detail.contribution}</b>
+            <ul class="ticks" style="margin-top:14px">
+              {p.contribution.map((c) => <li><Fragment set:html={check} /><span>{c}</span></li>)}
+            </ul>
+          </div>
+        </section>
+
+        {p.sections.map((s, i) => (
+          <section class="d-sec" id={`s${i}`} data-reveal>
+            <h2>{s.title}</h2>
+            {s.type === 'text' && s.paras.map((t) => <p>{t}</p>)}
+            {s.type === 'list' && (
+              <>
+                {s.intro && <p>{s.intro}</p>}
+                <ul class="ticks">
+                  {s.items.map((t) => <li><Fragment set:html={check} /><span>{t}</span></li>)}
+                </ul>
+              </>
+            )}
+            {s.type === 'flow' && (
+              <>
+                {s.intro.map((t) => <p>{t}</p>)}
+                <div class="flow">
+                  <div class="rail"></div>
+                  {s.steps.map((st, k) => (
+                    <div class="step">
+                      <div class="n">{k + 1}</div>
+                      <div class="c"><h3>{st.t}</h3><p>{st.d}</p></div>
+                    </div>
+                  ))}
+                </div>
+                {s.outro?.map((t) => <p>{t}</p>)}
+              </>
+            )}
+            {s.type === 'chart' && (
+              <>
+                {s.intro.map((t) => <p>{t}</p>)}
+                <div class="chart">
+                  {s.bars.map((b) => (
+                    <div class={`bar-row${b.hl ? ' hl' : ''}`}>
+                      <span>{b.label}</span>
+                      <div class="track"><div class="fill" style={`--w:${pct(b.value)}`}></div></div>
+                      <b>{b.value.toFixed(2)}%</b>
+                    </div>
+                  ))}
+                  <div class="axis"><div></div><div><span>80%</span><span>85%</span><span>90%</span></div><div></div></div>
+                </div>
+                {s.after.map((t) => <p>{t}</p>)}
+              </>
+            )}
+            {s.type === 'stage' && (
+              <>
+                {s.intro?.map((t) => <p>{t}</p>)}
+                <VideoStage items={s.items} note={s.note} lang={lang} />
+              </>
+            )}
+            {s.type === 'viewer' && (
+              <>
+                {s.intro?.map((t) => <p>{t}</p>)}
+                <Viewer items={s.items} frame={s.frame} credit={s.credit} lang={lang} />
+                {s.after && (
+                  <>
+                    <h3 class="sub-h">{s.after.title}</h3>
+                    <VideoStage items={s.after.items} note={s.after.note} lang={lang} />
+                  </>
+                )}
+              </>
+            )}
+            {s.type === 'collab' && (
+              <Collab quote={s.quote} lead={s.lead} abilities={s.abilities} roles={s.roles} rolesNote={s.rolesNote} methods={s.methods} cases={s.cases} notes={s.notes} lang={lang} />
+            )}
+            {s.type === 'qa' && (
+              <>
+                {s.intro?.map((t) => <p>{t}</p>)}
+                <div class="qa">
+                  {[s.items.slice(0, Math.ceil(s.items.length / 2)), s.items.slice(Math.ceil(s.items.length / 2))].map((col, c) => (
+                    <div class="qa-col">
+                      {col.map((it, k) => (
+                        <details class="qa-item">
+                          <summary>
+                            <span class="qa-no mono">{String((c ? Math.ceil(s.items.length / 2) : 0) + k + 1).padStart(2, '0')}</span>
+                            <span class="qa-q"><small>{it.tag}</small>{it.q}</span>
+                            <i class="qa-ic" aria-hidden="true"></i>
+                          </summary>
+                          <div class="qa-a">{it.a.map((t) => <p>{t}</p>)}</div>
+                        </details>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            {s.type === 'predict' && (
+              <>
+                {s.intro?.map((t) => <p>{t}</p>)}
+                <div class="pred">
+                  {s.rows.map((r) => (
+                    <article class="pred-row">
+                      <header>
+                        <h3>{r.topic}</h3>
+                        <span class={`verdict v-${verdictClass(r.verdict)}`}>{tx.detail.verdict(r.verdict)}</span>
+                      </header>
+                      <div class="pred-cols">
+                        <div><small class="mono">{tx.detail.predict}</small><p>{r.predict}</p></div>
+                        <div><small class="mono">{tx.detail.actual}</small><p>{r.actual}</p></div>
+                        <div class="lesson"><small class="mono">{tx.detail.lesson}</small><p>{r.lesson}</p></div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+                {s.after?.map((t) => <p class="after">{t}</p>)}
+              </>
+            )}
+            {s.type === 'stats' && (
+              <>
+                <div class="kstats">
+                  {s.items.map((it) => (
+                    <div class="kstat">
+                      <div class="kn"><span data-count={it.num} data-dec={it.dec}>{it.num.toFixed(it.dec)}</span><small>{it.suffix}</small></div>
+                      <b>{it.label}</b>
+                      {it.note && <p>{it.note}</p>}
+                    </div>
+                  ))}
+                </div>
+                <ul class="caveats">{s.notes.map((t) => <li>{t}</li>)}</ul>
+              </>
+            )}
+            {s.type === 'todo' && <ul class="todo">{s.items.map((t) => <li>{t}</li>)}</ul>}
+            {s.type === 'links' && (
+              s.items.some((l) => l.desc) ? (
+                <div class="linkcards">
+                  {s.items.map((l, k) => (
+                    <>
+                      {l.group && l.group !== s.items[k - 1]?.group && <h4 class="lg">{l.group}</h4>}
+                      <a class="lcard" href={l.url} target="_blank" rel="noopener">
+                        <small class="mono">{l.tag}</small>
+                        <b>{l.label}<span class="arrow">↗</span></b>
+                        <p>{l.desc}</p>
+                      </a>
+                    </>
+                  ))}
+                </div>
+              ) : (
+                <div class="links">
+                  {s.items.map((l) => <a class="btn" href={l.url} target="_blank" rel="noopener">{l.label} ↗</a>)}
+                </div>
+              )
+            )}
+          </section>
+        ))}
+      </div>
+    </div>
+
+    <nav class="d-nav">
+      <a href={`${prefix}projects/${prev.slug}/`}><small>{tx.detail.prev}</small><b>{prev.title}</b></a>
+      <a href={`${prefix}projects/${next.slug}/`}><small>{tx.detail.next}</small><b>{next.title}</b></a>
+    </nav>
+  </main>
+</Base>

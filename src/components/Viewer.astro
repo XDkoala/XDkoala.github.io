@@ -1,0 +1,48 @@
+---
+interface Item { src: string; title: string; tag: string; caption: string; note?: string }
+import { ui, type Lang } from '../i18n/ui';
+interface Props { items: Item[]; frame?: 'window'; credit?: string; lang?: Lang }
+const { items, frame, credit, lang = 'zh' } = Astro.props;
+const tx = ui[lang].viewer;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '') + '/';
+const first = items[0];
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+<div class={`viewer${frame ? ' ' + frame : ''}`} data-viewer>
+  <div class="v-stage">
+    <button class="v-main" type="button" data-lb={`${base}${first.src}`} data-caption={first.title} aria-label={tx.zoomAria}>
+      <div class="v-frame">
+        {frame === 'window' && <div class="v-bar"><i></i><i></i><i></i><span>NN Platform</span></div>}
+        <div class="v-shot"><img class="v-img" src={`${base}${first.src}`} alt={first.title} decoding="async" /></div>
+      </div>
+      <span class="v-zoom">{tx.zoom}</span>
+    </button>
+    <button class="v-nav prev" type="button" aria-label={tx.prev}>‹</button>
+    <button class="v-nav next" type="button" aria-label={tx.next}>›</button>
+    <span class="v-count mono"><b>01</b> / {pad(items.length)}</span>
+  </div>
+  <div class="v-cap">
+    <span class="v-tag">{first.tag}</span>
+    <h3 class="v-title">{first.title}</h3>
+    <p class="v-text">{first.caption}</p>
+    <p class="v-note" hidden={!first.note}>{first.note}</p>
+  </div>
+  <div class="v-strip" role="tablist">
+    {items.map((it, i) => (
+      <button
+        class={`v-thumb${i === 0 ? ' on' : ''}`}
+        type="button"
+        role="tab"
+        data-src={`${base}${it.src}`}
+        data-title={it.title}
+        data-tag={it.tag}
+        data-caption={it.caption}
+        data-note={it.note ?? ''}
+      >
+        <span class="v-ph"><img src={`${base}${it.src}`} alt="" loading="lazy" decoding="async" /></span>
+        <span class="v-t"><small>{it.tag}</small>{it.title}</span>
+      </button>
+    ))}
+  </div>
+  {credit && <p class="v-credit">{credit}</p>}
+</div>

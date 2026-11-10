@@ -1,0 +1,76 @@
+---
+import '../styles/global.css';
+import { ui, type Lang } from '../i18n/ui';
+interface Props { title: string; description?: string; lang?: Lang }
+const { lang = 'zh', title } = Astro.props;
+const t = ui[lang];
+const { description = t.description } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '') + '/';
+const enBase = base + 'en/';
+const path = Astro.url.pathname;
+const homePath = lang === 'en' ? enBase : base;
+const home = path === homePath || path === homePath + 'index.html';
+const h = (id: string) => (home ? `#${id}` : `${homePath}#${id}`);
+const isEnPath = path.startsWith(enBase);
+const rest = isEnPath ? path.slice(enBase.length) : path.slice(base.length);
+const switchHref = lang === 'en' ? base + rest : enBase + rest;
+---
+<!doctype html>
+<html lang={t.htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#00703c" />
+    <title>{title}</title>
+    <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
+    <script is:inline>
+      (function () {
+        var d = document.documentElement;
+        if (!matchMedia('(prefers-reduced-motion: reduce)').matches) d.classList.add('js');
+        try { if (sessionStorage.getItem('cur') === '1') d.classList.add('cur'); } catch (e) {}
+      })();
+    </script>
+    <style is:global>
+      .cur .curtain { transform: translateY(0); }
+    </style>
+  </head>
+  <body>
+    <div class="progress"><i></i></div>
+    <div class="glow"></div>
+    <header class="nav">
+      <div class="wrap">
+        <a class="brand" href={h('about')} aria-label={t.brandAria}>
+          <span class="logo">SY</span><span>{t.brandName}</span>
+        </a>
+        <nav>
+          <ul>
+            <li><a data-spy href={h('about')}>{t.nav.about}</a></li>
+            <li><a data-spy href={h('education')}>{t.nav.education}</a></li>
+            <li><a data-spy href={h('projects')}>{t.nav.projects}</a></li>
+          </ul>
+        </nav>
+        <a class="lang" href={switchHref} title={t.switchTitle} hreflang={lang === 'en' ? 'zh-CN' : 'en'}>{t.switchText}</a>
+      </div>
+    </header>
+    <slot />
+    <footer>
+      <div class="wrap">
+        <span>{t.footer.left}</span>
+        <span class="mono">{t.footer.right}</span>
+      </div>
+    </footer>
+    <div class="lb" role="dialog" aria-modal="true" aria-label={t.lb.aria}>
+      <button class="x" aria-label={t.lb.close}>×</button>
+      <figure>
+        <img alt={t.lb.alt} />
+        <div class="alt"></div>
+        <figcaption></figcaption>
+      </figure>
+    </div>
+    <div class="curtain" aria-hidden="true">SOREN YAO</div>
+    <script>
+      import '../scripts/main.ts';
+    </script>
+  </body>
+</html>

@@ -1,0 +1,36 @@
+---
+import type { Award } from '../data/zh';
+import { ui, rankOf, type Lang } from '../i18n/ui';
+interface Props { a: Award; variant?: 'feature' | 'wide' | 'small'; lang?: Lang }
+const { a, variant = 'small', lang = 'zh' } = Astro.props;
+const t = ui[lang];
+const base = import.meta.env.BASE_URL.replace(/\/$/, '') + '/';
+const lvl = ['', 'l1', 'l2', 'l3'][rankOf(a.level)];
+---
+<button
+  class={`award ${variant}`}
+  data-reveal
+  data-lb={`${base}${a.img}`}
+  data-extra={JSON.stringify((a.extra ?? []).map((e) => ({ label: e.label, img: `${base}${e.img}` })))}
+  data-caption={`${a.event}${a.track ? ' · ' + a.track : ''} · ${a.level} · ${a.work}`}
+>
+  {a.extra?.length ? (
+    <div class="thumb reel" data-reel>
+      {[{ label: t.edu.reel, img: a.img }, ...a.extra].map((m, i) => (
+        <img class={i === 0 ? 'on' : ''} src={`${base}${m.img}`} alt={`${a.work} ${m.label}`} data-label={m.label} loading="lazy" decoding="async" />
+      ))}
+      <div class="reel-ui">
+        <span class="reel-label">{t.edu.reel}</span>
+        <span class="dots">{[0, ...a.extra].map((_, i) => <i class={i === 0 ? 'on' : ''}></i>)}</span>
+      </div>
+    </div>
+  ) : (
+    <div class="thumb"><img src={`${base}${a.img}`} alt={t.edu.certAlt(a.work)} loading="lazy" decoding="async" /></div>
+  )}
+  <div class="info">
+    <div class="row"><span class={`badge ${lvl}`}>{a.level}</span><span class="dt">{a.date}</span></div>
+    <div class="wk">{a.work}</div>
+    {a.track ? <div class="ev">{a.track}</div> : <div class="ev">{a.event}</div>}
+    {a.topic && a.topic !== a.work && <div class="tp">{t.edu.topic}{a.topic}</div>}
+  </div>
+</button>

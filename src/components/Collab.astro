@@ -1,0 +1,90 @@
+---
+import { ui, type Lang } from '../i18n/ui';
+interface Ref { label: string; url: string }
+interface Case { group: string; title: string; gist: string; problem: string; intervene: string; ai: string; result: string; refs: Ref[] }
+interface Props {
+  quote: string;
+  lead: string;
+  abilities: { t: string; d: string }[];
+  roles: { who: string; d: string; me?: boolean }[];
+  rolesNote: string;
+  methods: { t: string; d: string }[];
+  cases: Case[];
+  notes: string[];
+  lang?: Lang;
+}
+const { quote, lead, abilities, roles, rolesNote, methods, cases, notes, lang = 'zh' } = Astro.props;
+const tx = ui[lang].collab;
+const groups = [...new Set(cases.map((c) => c.group))];
+const pad = (n: number) => String(n).padStart(2, '0');
+const steps = tx.steps;
+---
+<div class="collab" data-collab>
+  <blockquote class="c-quote">{quote}</blockquote>
+  <p>{lead}</p>
+
+  <h3 class="c-h" id="c-abil">{tx.abilities}</h3>
+  <div class="c-abil">
+    {abilities.map((a, i) => (
+      <div class="c-card">
+        <span class="c-n mono">{pad(i + 1)}</span>
+        <b>{a.t}</b>
+        <p>{a.d}</p>
+      </div>
+    ))}
+  </div>
+
+  <h3 class="c-h" id="c-roles">{tx.roles}</h3>
+  <div class="c-roles">
+    {roles.map((r) => (
+      <div class={`c-role${r.me ? ' me' : ''}`}>
+        <b>{r.who}</b>
+        <p>{r.d}</p>
+      </div>
+    ))}
+  </div>
+  <div class="c-bus mono"><span>{tx.bus}</span></div>
+  <p class="c-note">{rolesNote}</p>
+
+  <h3 class="c-h" id="c-methods">{tx.methods}</h3>
+  <ol class="c-methods">
+    {methods.map((m, i) => (
+      <li>
+        <span class="c-n mono">{pad(i + 1)}</span>
+        <div><b>{m.t}</b><p>{m.d}</p></div>
+      </li>
+    ))}
+  </ol>
+
+  <h3 class="c-h" id="c-cases">{tx.cases(cases.length)}</h3>
+  <div class="c-tabs" role="tablist">
+    <button class="chip-btn on" type="button" data-cg="all">{tx.all}<i>{cases.length}</i></button>
+    {groups.map((g) => <button class="chip-btn" type="button" data-cg={g}>{g}<i>{cases.filter((c) => c.group === g).length}</i></button>)}
+  </div>
+  <div class="c-cases">
+    {cases.map((c, i) => (
+      <details class="c-case" data-group={c.group}>
+        <summary>
+          <span class="c-n mono">{pad(i + 1)}</span>
+          <span class="c-t"><small>{c.group}</small><b>{c.title}</b><em>{c.gist}</em></span>
+          <i class="qa-ic" aria-hidden="true"></i>
+        </summary>
+        <div class="c-body">
+          <div class="c-steps">
+            {steps.map(([k, label]) => (
+              <div class={`c-step s-${k}`}>
+                <small class="mono">{label}</small>
+                <p>{c[k]}</p>
+              </div>
+            ))}
+          </div>
+          <div class="c-refs">
+            <span class="mono">{tx.refs}</span>
+            {c.refs.map((r) => <a href={r.url} target="_blank" rel="noopener">{r.label} ↗</a>)}
+          </div>
+        </div>
+      </details>
+    ))}
+  </div>
+  {notes.map((n) => <p class="c-foot">{n}</p>)}
+</div>

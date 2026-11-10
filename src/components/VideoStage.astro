@@ -1,0 +1,33 @@
+---
+interface Item { src: string; label: string; meta: string; desc: string }
+import { ui, type Lang } from '../i18n/ui';
+interface Props { items: Item[]; note?: string; lang?: Lang }
+const { items, note, lang = 'zh' } = Astro.props;
+const tx = ui[lang].stage;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '') + '/';
+const first = items[0];
+const multi = items.length > 1;
+const speed = (m: string) => (m.includes('2×') ? tx.speedFast : tx.speedReal);
+const playIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>';
+---
+<div class={`vstage${multi ? '' : ' single'}`} data-vstage>
+  <div class="vs-screen">
+    <video src={`${base}${first.src}#t=0.1`} muted loop playsinline preload="metadata"></video>
+    <span class="vs-badge mono">{speed(first.meta)}</span>
+    <button class="vs-toggle" type="button" aria-label={tx.toggle}><Fragment set:html={playIcon} /></button>
+    <div class="vs-progress"><i></i></div>
+  </div>
+  <div class="vs-info">
+    <div class="vs-tabs">
+      {items.map((it, i) => (
+        <button class={`vs-tab${i === 0 ? ' on' : ''}`} type="button" data-src={`${base}${it.src}`} data-desc={it.desc} data-meta={it.meta} data-speed={speed(it.meta)}>
+          <span class="vs-no mono">{String(i + 1).padStart(2, '0')}</span>
+          <span class="vs-lab"><b>{it.label}</b><small>{it.meta}</small></span>
+          <i class="vs-fill"></i>
+        </button>
+      ))}
+    </div>
+    <p class="vs-desc">{first.desc}</p>
+  </div>
+  {note && <p class="vs-note">{note}</p>}
+</div>
