@@ -119,7 +119,12 @@ if (!reduce) {
   ScrollTrigger.batch('[data-reveal]', {
     start: 'top 92%',
     once: true,
-    onEnter: (els) => gsap.fromTo(els, { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 1, stagger: 0.1, ease: 'power3.out', overwrite: true }),
+    onEnter: (els) => {
+      const above = els.filter((el) => el.getBoundingClientRect().bottom <= 0);
+      if (above.length) gsap.set(above, { y: 0, opacity: 1, overwrite: true });
+      const visible = els.filter((el) => !above.includes(el));
+      if (visible.length) gsap.fromTo(visible, { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 1, stagger: 0.1, ease: 'power3.out', overwrite: true });
+    },
   });
 }
 
